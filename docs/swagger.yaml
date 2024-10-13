@@ -1,4 +1,18 @@
 definitions:
+  model.Address:
+    properties:
+      postal_code:
+        type: string
+      street:
+        type: string
+    type: object
+  model.Contact:
+    properties:
+      email:
+        type: string
+      phone:
+        type: string
+    type: object
   model.LoginRequest:
     properties:
       identifier:
@@ -72,6 +86,36 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  model.Warehouse:
+    properties:
+      created_at:
+        type: string
+      detail:
+        $ref: '#/definitions/model.WarehouseDetail'
+      id:
+        type: integer
+      location:
+        type: string
+      name:
+        type: string
+      shop_id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.WarehouseDetail:
+    properties:
+      addresses:
+        items:
+          $ref: '#/definitions/model.Address'
+        type: array
+      contact:
+        $ref: '#/definitions/model.Contact'
+      image_url:
+        type: string
     type: object
 info:
   contact: {}
@@ -394,4 +438,133 @@ paths:
       summary: Update an existing user
       tags:
       - users
+  /warehouses:
+    get:
+      description: Retrieve all warehouse in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all warehouse
+      tags:
+      - warehouses
+    post:
+      consumes:
+      - application/json
+      description: Create Warehouse
+      parameters:
+      - description: Warehouse details
+        in: body
+        name: warehouse
+        required: true
+        schema:
+          $ref: '#/definitions/model.Warehouse'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Create Warehouse
+      tags:
+      - warehouses
+  /warehouses/{id}:
+    delete:
+      description: Remove an warehouse from the system by its ID
+      parameters:
+      - description: Warehouse ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Delete an warehouse by ID
+      tags:
+      - warehouses
+    get:
+      description: Retrieve an warehouse by its ID
+      parameters:
+      - description: Warehouse ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get an warehouse by ID
+      tags:
+      - warehouses
+    put:
+      consumes:
+      - application/json
+      description: Update warehouse details
+      parameters:
+      - description: Warehouse ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Warehouse details
+        in: body
+        name: warehouse
+        required: true
+        schema:
+          $ref: '#/definitions/model.Warehouse'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Warehouse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Update an existing warehouse
+      tags:
+      - warehouses
 swagger: "2.0"
