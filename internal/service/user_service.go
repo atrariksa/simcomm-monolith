@@ -39,7 +39,14 @@ func NewUserService(repo repository.UserRepository, redisRepo repository.RedisRe
 }
 
 func (s *userService) Create(ctx context.Context, user *model.User) error {
-	return s.repo.Create(ctx, user)
+	timeNow := util.TimeNow()
+	user.CreatedAt = timeNow
+	user.UpdatedAt = timeNow
+	err := s.repo.Create(ctx, user)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
 }
 
 func (s *userService) Get(ctx context.Context, id int) (*model.User, error) {
@@ -70,6 +77,7 @@ func (s *userService) SignUp(ctx context.Context, req model.SignUpRequest) error
 		return errors.New(util.ErrInternalServerError)
 	}
 
+	timeNow := util.TimeNow()
 	user := &model.User{
 		Name:      req.Name,
 		Phone:     req.Phone,
@@ -78,6 +86,8 @@ func (s *userService) SignUp(ctx context.Context, req model.SignUpRequest) error
 		UserDetail: model.UserDetail{
 			Roles: []string{req.Role},
 		},
+		CreatedAt: timeNow,
+		UpdatedAt: timeNow,
 	}
 	err = s.repo.Create(ctx, user)
 	if err != nil {

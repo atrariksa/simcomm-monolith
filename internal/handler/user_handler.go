@@ -89,7 +89,7 @@ func (h *UserHandler) GetUser(c echo.Context) error {
 // @Produce json
 // @Success 200 {object}  model.Response
 // @Failure 500 {object}  model.Response
-// @Router /user [get]
+// @Router /users [get]
 func (h *UserHandler) GetAllUsers(c echo.Context) error {
 	ctx := c.Request().Context()
 	users, err := h.service.GetAll(ctx)
@@ -106,16 +106,23 @@ func (h *UserHandler) GetAllUsers(c echo.Context) error {
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param id path int true "User ID"
 // @Param user body model.User true "User details"
 // @Success 200 {object} model.User
 // @Failure 400 {object} model.Response
 // @Failure 500 {object} model.Response
-// @Router /users [put]
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c echo.Context) error {
 	var user model.User
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, model.Response{Message: "Invalid input"})
 	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{Message: "Invalid ID"})
+	}
+	user.ID = id
 
 	ctx := c.Request().Context()
 	if err := h.service.Update(ctx, &user); err != nil {

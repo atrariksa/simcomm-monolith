@@ -41,6 +41,10 @@ func SetupServer() {
 	svc := service.NewUserService(userRepo, redisRepo, cfg)
 	RegisterUserHandler(e, svc)
 
+	productRepo := repository.NewPostgreProductRepository(util.GetDB(cfg))
+	productSvc := service.NewProductService(productRepo, redisRepo, cfg)
+	RegisterProductHandler(e, productSvc)
+
 	// Start server
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%v", cfg.ServerConfig.Host) + ":" + fmt.Sprintf("%v", cfg.ServerConfig.Port)))
 }
