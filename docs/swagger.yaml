@@ -48,6 +48,34 @@ definitions:
       message:
         type: string
     type: object
+  model.Shop:
+    properties:
+      created_at:
+        type: string
+      detail:
+        $ref: '#/definitions/model.ShopDetail'
+      id:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  model.ShopDetail:
+    properties:
+      addresses:
+        items:
+          $ref: '#/definitions/model.Address'
+        type: array
+      contact:
+        $ref: '#/definitions/model.Contact'
+      image_url:
+        type: string
+    type: object
   model.SignUpRequest:
     properties:
       email:
@@ -309,6 +337,135 @@ paths:
       summary: Update an existing product
       tags:
       - products
+  /shops:
+    get:
+      description: Retrieve all shop in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all shop
+      tags:
+      - shops
+    post:
+      consumes:
+      - application/json
+      description: Create Shop
+      parameters:
+      - description: Shop details
+        in: body
+        name: shop
+        required: true
+        schema:
+          $ref: '#/definitions/model.Shop'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Create Shop
+      tags:
+      - shops
+  /shops/{id}:
+    delete:
+      description: Remove an shop from the system by its ID
+      parameters:
+      - description: Shop ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Delete an shop by ID
+      tags:
+      - shops
+    get:
+      description: Retrieve an shop by its ID
+      parameters:
+      - description: Shop ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get an shop by ID
+      tags:
+      - shops
+    put:
+      consumes:
+      - application/json
+      description: Update shop details
+      parameters:
+      - description: Shop ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Shop details
+        in: body
+        name: shop
+        required: true
+        schema:
+          $ref: '#/definitions/model.Shop'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Shop'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Update an existing shop
+      tags:
+      - shops
   /users:
     get:
       description: Retrieve all user in the system

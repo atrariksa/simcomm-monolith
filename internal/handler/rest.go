@@ -49,6 +49,10 @@ func SetupServer() {
 	warehouseSvc := service.NewWarehouseService(warehouseRepo, redisRepo, cfg)
 	RegisterWarehouseHandler(e, warehouseSvc)
 
+	shopRepo := repository.NewPostgreShopRepository(util.GetDB(cfg))
+	shopSvc := service.NewShopService(shopRepo, redisRepo, cfg)
+	RegisterShopHandler(e, shopSvc)
+
 	// Start server
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%v", cfg.ServerConfig.Host) + ":" + fmt.Sprintf("%v", cfg.ServerConfig.Port)))
 }
