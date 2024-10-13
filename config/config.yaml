@@ -1,0 +1,21 @@
+server:
+  env: "dev"
+  host: ""
+  port: 6022
+
+redis:
+  address: "localhost:6379"
+  password: ""
+  db: 0
+
+database:
+  driver: "postgresql"
+  host: "localhost"
+  port: "5432"
+  user: "postgres"
+  password: ""
+  db_name: "simcomm"
+
+auth-token:
+  duration: 600
+  secretkey: "anysecret"
