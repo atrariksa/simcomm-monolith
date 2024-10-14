@@ -28,6 +28,13 @@ type WarehouseDetail struct {
 	ImageURL  string    `json:"image_url"`
 }
 
+type WarehouseStoredProduct struct {
+	ID              int    `json:"id" gorm:"column:id"`
+	ShopProductID   int    `json:"shop_product_id" gorm:"column:shop_product_id"`
+	ShopProductName string `json:"shop_product_name" gorm:"column:shop_product_name"`
+	Stock           int    `json:"stock" gorm:"column:stock"`
+}
+
 // Implement the Valuer interface for Detail
 func (d WarehouseDetail) Value() (driver.Value, error) {
 	return json.Marshal(d)

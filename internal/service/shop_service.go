@@ -17,6 +17,8 @@ type ShopService interface {
 	GetAll(ctx context.Context) ([]model.Shop, error)
 	Update(ctx context.Context, shop *model.Shop) error
 	Delete(ctx context.Context, id int) error
+
+	ShopProductService
 }
 
 type shopService struct {
@@ -58,4 +60,40 @@ func (s *shopService) Update(ctx context.Context, shop *model.Shop) error {
 
 func (s *shopService) Delete(ctx context.Context, id int) error {
 	return s.repo.Delete(ctx, id)
+}
+
+// ShopProductService defines the methods for the ShopProduct service
+type ShopProductService interface {
+	ShopProductServiceCreate(ctx context.Context, shopproduct *model.ShopProduct) error
+	ShopProductServiceGet(ctx context.Context, id int) (*model.ShopProduct, error)
+	ShopProductServiceGetAll(ctx context.Context) ([]model.ShopProduct, error)
+	ShopProductServiceUpdate(ctx context.Context, shopproduct *model.ShopProduct) error
+	ShopProductServiceDelete(ctx context.Context, id int) error
+}
+
+func (s *shopService) ShopProductServiceCreate(ctx context.Context, shopproduct *model.ShopProduct) error {
+	timeNow := util.TimeNow()
+	shopproduct.CreatedAt = timeNow
+	shopproduct.UpdatedAt = timeNow
+	err := s.repo.ShopProductRepositoryCreate(ctx, shopproduct)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
+}
+
+func (s *shopService) ShopProductServiceGet(ctx context.Context, id int) (*model.ShopProduct, error) {
+	return s.repo.ShopProductRepositoryGet(ctx, id)
+}
+
+func (s *shopService) ShopProductServiceGetAll(ctx context.Context) ([]model.ShopProduct, error) {
+	return s.repo.ShopProductRepositoryGetAll(ctx)
+}
+
+func (s *shopService) ShopProductServiceUpdate(ctx context.Context, shopproduct *model.ShopProduct) error {
+	return s.repo.ShopProductRepositoryUpdate(ctx, shopproduct)
+}
+
+func (s *shopService) ShopProductServiceDelete(ctx context.Context, id int) error {
+	return s.repo.ShopProductRepositoryDelete(ctx, id)
 }

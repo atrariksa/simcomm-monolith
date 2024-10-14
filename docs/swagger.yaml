@@ -63,7 +63,9 @@ definitions:
     type: object
   model.ProductDetail:
     properties:
-      stock:
+      image_url:
+        type: string
+      weight:
         type: integer
     type: object
   model.Response:
@@ -80,6 +82,8 @@ definitions:
         $ref: '#/definitions/model.ShopDetail'
       id:
         type: integer
+      location:
+        type: string
       name:
         type: string
       status:
@@ -99,6 +103,41 @@ definitions:
         $ref: '#/definitions/model.Contact'
       image_url:
         type: string
+    type: object
+  model.ShopProduct:
+    properties:
+      created_at:
+        type: string
+      detail:
+        $ref: '#/definitions/model.ShopProductDetails'
+      id:
+        type: integer
+      product_id:
+        type: integer
+      shop_id:
+        type: integer
+      status:
+        type: string
+      stock:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.ShopProductDetail:
+    properties:
+      stock:
+        type: integer
+      warehouse_id:
+        type: integer
+      warehouse_status:
+        type: string
+    type: object
+  model.ShopProductDetails:
+    properties:
+      shop_product_details:
+        items:
+          $ref: '#/definitions/model.ShopProductDetail'
+        type: array
     type: object
   model.SignUpRequest:
     properties:
@@ -494,6 +533,135 @@ paths:
       summary: Update an existing product
       tags:
       - products
+  /shop-products:
+    get:
+      description: Retrieve all shopproduct in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all shopproduct
+      tags:
+      - shopproducts
+    post:
+      consumes:
+      - application/json
+      description: Create ShopProduct
+      parameters:
+      - description: ShopProduct details
+        in: body
+        name: shopproduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShopProduct'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Create ShopProduct
+      tags:
+      - shopproducts
+  /shop-products/{id}:
+    delete:
+      description: Remove an shopproduct from the system by its ID
+      parameters:
+      - description: ShopProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Delete an shopproduct by ID
+      tags:
+      - shopproducts
+    get:
+      description: Retrieve an shopproduct by its ID
+      parameters:
+      - description: ShopProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get an shopproduct by ID
+      tags:
+      - shopproducts
+    put:
+      consumes:
+      - application/json
+      description: Update shopproduct details
+      parameters:
+      - description: ShopProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ShopProduct details
+        in: body
+        name: shopproduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShopProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ShopProduct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Update an existing shopproduct
+      tags:
+      - shopproducts
   /shops:
     get:
       description: Retrieve all shop in the system

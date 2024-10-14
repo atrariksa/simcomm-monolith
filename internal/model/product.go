@@ -22,7 +22,8 @@ func (Product) TableName() string {
 }
 
 type ProductDetail struct {
-	Stock int `json:"stock"`
+	Weight   int    `json:"weight"`
+	ImageURL string `json:"image_url"`
 }
 
 // Implement the Valuer interface for Detail

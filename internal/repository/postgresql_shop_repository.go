@@ -14,6 +14,8 @@ type ShopRepository interface {
 	GetAll(ctx context.Context) ([]model.Shop, error)
 	Update(ctx context.Context, shop *model.Shop) error
 	Delete(ctx context.Context, id int) error
+
+	ShopProductRepository
 }
 
 type postgresShopRepository struct {
@@ -59,6 +61,54 @@ func (r *postgresShopRepository) Update(ctx context.Context, shop *model.Shop) e
 // Delete removes a shop from the database
 func (r *postgresShopRepository) Delete(ctx context.Context, id int) error {
 	if err := r.db.WithContext(ctx).Delete(&model.Shop{}, id).Error; err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+type ShopProductRepository interface {
+	ShopProductRepositoryCreate(ctx context.Context, shopproduct *model.ShopProduct) error
+	ShopProductRepositoryGet(ctx context.Context, id int) (*model.ShopProduct, error)
+	ShopProductRepositoryGetAll(ctx context.Context) ([]model.ShopProduct, error)
+	ShopProductRepositoryUpdate(ctx context.Context, shopproduct *model.ShopProduct) error
+	ShopProductRepositoryDelete(ctx context.Context, id int) error
+}
+
+// Create inserts a new shopproduct into the database
+func (r *postgresShopRepository) ShopProductRepositoryCreate(ctx context.Context, shopproduct *model.ShopProduct) error {
+	return r.db.WithContext(ctx).Create(shopproduct).Error
+}
+
+// Get retrieves a shopproduct by ID
+func (r *postgresShopRepository) ShopProductRepositoryGet(ctx context.Context, id int) (*model.ShopProduct, error) {
+	var shopproduct model.ShopProduct
+	if err := r.db.WithContext(ctx).First(&shopproduct, id).Error; err != nil {
+		return nil, err
+	}
+	return &shopproduct, nil
+}
+
+// GetAll retrieves all shopproducts from the database
+func (r *postgresShopRepository) ShopProductRepositoryGetAll(ctx context.Context) ([]model.ShopProduct, error) {
+	var shopproducts []model.ShopProduct
+	if err := r.db.WithContext(ctx).Find(&shopproducts).Error; err != nil {
+		return nil, err
+	}
+	return shopproducts, nil
+}
+
+// Update updates an existing shopproduct
+func (r *postgresShopRepository) ShopProductRepositoryUpdate(ctx context.Context, shopproduct *model.ShopProduct) error {
+	if err := r.db.WithContext(ctx).Save(shopproduct).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete removes a shopproduct from the database
+func (r *postgresShopRepository) ShopProductRepositoryDelete(ctx context.Context, id int) error {
+	if err := r.db.WithContext(ctx).Delete(&model.ShopProduct{}, id).Error; err != nil {
 		log.Error(err)
 		return err
 	}

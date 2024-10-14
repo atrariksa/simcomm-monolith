@@ -486,6 +486,201 @@
                 }
             }
         },
+        "/shop-products": {
+            "get": {
+                "description": "Retrieve all shopproduct in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shopproducts"
+                ],
+                "summary": "Get all shopproduct",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create ShopProduct",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shopproducts"
+                ],
+                "summary": "Create ShopProduct",
+                "parameters": [
+                    {
+                        "description": "ShopProduct details",
+                        "name": "shopproduct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ShopProduct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/shop-products/{id}": {
+            "get": {
+                "description": "Retrieve an shopproduct by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shopproducts"
+                ],
+                "summary": "Get an shopproduct by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ShopProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update shopproduct details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shopproducts"
+                ],
+                "summary": "Update an existing shopproduct",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ShopProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ShopProduct details",
+                        "name": "shopproduct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ShopProduct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ShopProduct"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove an shopproduct from the system by its ID",
+                "tags": [
+                    "shopproducts"
+                ],
+                "summary": "Delete an shopproduct by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ShopProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/shops": {
             "get": {
                 "description": "Retrieve all shop in the system",
@@ -1172,7 +1367,10 @@
         "model.ProductDetail": {
             "type": "object",
             "properties": {
-                "stock": {
+                "image_url": {
+                    "type": "string"
+                },
+                "weight": {
                     "type": "integer"
                 }
             }
@@ -1197,6 +1395,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -1226,6 +1427,60 @@
                 },
                 "image_url": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ShopProduct": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "detail": {
+                    "$ref": "#/definitions/model.ShopProductDetails"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "shop_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "stock": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ShopProductDetail": {
+            "type": "object",
+            "properties": {
+                "stock": {
+                    "type": "integer"
+                },
+                "warehouse_id": {
+                    "type": "integer"
+                },
+                "warehouse_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ShopProductDetails": {
+            "type": "object",
+            "properties": {
+                "shop_product_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ShopProductDetail"
+                    }
                 }
             }
         },
