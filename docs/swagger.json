@@ -1071,6 +1071,201 @@
                 }
             }
         },
+        "/warehouse-stored-products": {
+            "get": {
+                "description": "Retrieve all warehousestoredproduct in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "warehousestoredproducts"
+                ],
+                "summary": "Get all warehousestoredproduct",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create WarehouseStoredProduct",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "warehousestoredproducts"
+                ],
+                "summary": "Create WarehouseStoredProduct",
+                "parameters": [
+                    {
+                        "description": "WarehouseStoredProduct details",
+                        "name": "warehousestoredproduct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseStoredProduct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/warehouse-stored-products/{id}": {
+            "get": {
+                "description": "Retrieve an warehousestoredproduct by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "warehousestoredproducts"
+                ],
+                "summary": "Get an warehousestoredproduct by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "WarehouseStoredProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update warehousestoredproduct details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "warehousestoredproducts"
+                ],
+                "summary": "Update an existing warehousestoredproduct",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "WarehouseStoredProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "WarehouseStoredProduct details",
+                        "name": "warehousestoredproduct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseStoredProduct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseStoredProduct"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove an warehousestoredproduct from the system by its ID",
+                "tags": [
+                    "warehousestoredproducts"
+                ],
+                "summary": "Delete an warehousestoredproduct by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "WarehouseStoredProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/warehouses": {
             "get": {
                 "description": "Retrieve all warehouse in the system",
@@ -1592,6 +1787,29 @@
                     "$ref": "#/definitions/model.Contact"
                 },
                 "image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WarehouseStoredProduct": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shop_product_id": {
+                    "type": "integer"
+                },
+                "shop_product_name": {
+                    "type": "string"
+                },
+                "stock": {
+                    "type": "integer"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

@@ -14,6 +14,8 @@ type WarehouseRepository interface {
 	GetAll(ctx context.Context) ([]model.Warehouse, error)
 	Update(ctx context.Context, warehouse *model.Warehouse) error
 	Delete(ctx context.Context, id int) error
+
+	WarehouseStoredProductRepository
 }
 
 type postgresWarehouseRepository struct {
@@ -59,6 +61,54 @@ func (r *postgresWarehouseRepository) Update(ctx context.Context, warehouse *mod
 // Delete removes a warehouse from the database
 func (r *postgresWarehouseRepository) Delete(ctx context.Context, id int) error {
 	if err := r.db.WithContext(ctx).Delete(&model.Warehouse{}, id).Error; err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+type WarehouseStoredProductRepository interface {
+	WSPCreate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error
+	WSPGet(ctx context.Context, id int) (*model.WarehouseStoredProduct, error)
+	WSPGetAll(ctx context.Context) ([]model.WarehouseStoredProduct, error)
+	WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error
+	WSPDelete(ctx context.Context, id int) error
+}
+
+// Create inserts a new warehousestoredproduct into the database
+func (r *postgresWarehouseRepository) WSPCreate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error {
+	return r.db.WithContext(ctx).Create(warehousestoredproduct).Error
+}
+
+// Get retrieves a warehousestoredproduct by ID
+func (r *postgresWarehouseRepository) WSPGet(ctx context.Context, id int) (*model.WarehouseStoredProduct, error) {
+	var warehousestoredproduct model.WarehouseStoredProduct
+	if err := r.db.WithContext(ctx).First(&warehousestoredproduct, id).Error; err != nil {
+		return nil, err
+	}
+	return &warehousestoredproduct, nil
+}
+
+// GetAll retrieves all warehousestoredproducts from the database
+func (r *postgresWarehouseRepository) WSPGetAll(ctx context.Context) ([]model.WarehouseStoredProduct, error) {
+	var warehousestoredproducts []model.WarehouseStoredProduct
+	if err := r.db.WithContext(ctx).Find(&warehousestoredproducts).Error; err != nil {
+		return nil, err
+	}
+	return warehousestoredproducts, nil
+}
+
+// Update updates an existing warehousestoredproduct
+func (r *postgresWarehouseRepository) WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error {
+	if err := r.db.WithContext(ctx).Save(warehousestoredproduct).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete removes a warehousestoredproduct from the database
+func (r *postgresWarehouseRepository) WSPDelete(ctx context.Context, id int) error {
+	if err := r.db.WithContext(ctx).Delete(&model.WarehouseStoredProduct{}, id).Error; err != nil {
 		log.Error(err)
 		return err
 	}

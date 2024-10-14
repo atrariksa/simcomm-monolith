@@ -212,6 +212,21 @@ definitions:
       image_url:
         type: string
     type: object
+  model.WarehouseStoredProduct:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      shop_product_id:
+        type: integer
+      shop_product_name:
+        type: string
+      stock:
+        type: integer
+      updated_at:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -920,6 +935,135 @@ paths:
       summary: Update an existing user
       tags:
       - users
+  /warehouse-stored-products:
+    get:
+      description: Retrieve all warehousestoredproduct in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all warehousestoredproduct
+      tags:
+      - warehousestoredproducts
+    post:
+      consumes:
+      - application/json
+      description: Create WarehouseStoredProduct
+      parameters:
+      - description: WarehouseStoredProduct details
+        in: body
+        name: warehousestoredproduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.WarehouseStoredProduct'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Create WarehouseStoredProduct
+      tags:
+      - warehousestoredproducts
+  /warehouse-stored-products/{id}:
+    delete:
+      description: Remove an warehousestoredproduct from the system by its ID
+      parameters:
+      - description: WarehouseStoredProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Delete an warehousestoredproduct by ID
+      tags:
+      - warehousestoredproducts
+    get:
+      description: Retrieve an warehousestoredproduct by its ID
+      parameters:
+      - description: WarehouseStoredProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get an warehousestoredproduct by ID
+      tags:
+      - warehousestoredproducts
+    put:
+      consumes:
+      - application/json
+      description: Update warehousestoredproduct details
+      parameters:
+      - description: WarehouseStoredProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: WarehouseStoredProduct details
+        in: body
+        name: warehousestoredproduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.WarehouseStoredProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WarehouseStoredProduct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Update an existing warehousestoredproduct
+      tags:
+      - warehousestoredproducts
   /warehouses:
     get:
       description: Retrieve all warehouse in the system

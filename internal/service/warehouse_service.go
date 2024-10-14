@@ -17,6 +17,8 @@ type WarehouseService interface {
 	GetAll(ctx context.Context) ([]model.Warehouse, error)
 	Update(ctx context.Context, warehouse *model.Warehouse) error
 	Delete(ctx context.Context, id int) error
+
+	WarehouseStoredProductService
 }
 
 type warehouseService struct {
@@ -58,4 +60,40 @@ func (s *warehouseService) Update(ctx context.Context, warehouse *model.Warehous
 
 func (s *warehouseService) Delete(ctx context.Context, id int) error {
 	return s.repo.Delete(ctx, id)
+}
+
+// WarehouseStoredProductService defines the methods for the WarehouseStoredProduct service
+type WarehouseStoredProductService interface {
+	WSPCreate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error
+	WSPGet(ctx context.Context, id int) (*model.WarehouseStoredProduct, error)
+	WSPGetAll(ctx context.Context) ([]model.WarehouseStoredProduct, error)
+	WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error
+	WSPDelete(ctx context.Context, id int) error
+}
+
+func (s *warehouseService) WSPCreate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error {
+	timeNow := util.TimeNow()
+	warehousestoredproduct.CreatedAt = timeNow
+	warehousestoredproduct.UpdatedAt = timeNow
+	err := s.repo.WSPCreate(ctx, warehousestoredproduct)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
+}
+
+func (s *warehouseService) WSPGet(ctx context.Context, id int) (*model.WarehouseStoredProduct, error) {
+	return s.repo.WSPGet(ctx, id)
+}
+
+func (s *warehouseService) WSPGetAll(ctx context.Context) ([]model.WarehouseStoredProduct, error) {
+	return s.repo.WSPGetAll(ctx)
+}
+
+func (s *warehouseService) WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error {
+	return s.repo.WSPUpdate(ctx, warehousestoredproduct)
+}
+
+func (s *warehouseService) WSPDelete(ctx context.Context, id int) error {
+	return s.repo.WSPDelete(ctx, id)
 }

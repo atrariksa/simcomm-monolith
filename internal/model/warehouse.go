@@ -29,10 +29,12 @@ type WarehouseDetail struct {
 }
 
 type WarehouseStoredProduct struct {
-	ID              int    `json:"id" gorm:"column:id"`
-	ShopProductID   int    `json:"shop_product_id" gorm:"column:shop_product_id"`
-	ShopProductName string `json:"shop_product_name" gorm:"column:shop_product_name"`
-	Stock           int    `json:"stock" gorm:"column:stock"`
+	ID              int       `json:"id" gorm:"column:id"`
+	ShopProductID   int       `json:"shop_product_id" gorm:"column:shop_product_id"`
+	ShopProductName string    `json:"shop_product_name" gorm:"column:shop_product_name"`
+	Stock           int       `json:"stock" gorm:"column:stock"`
+	CreatedAt       time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt       time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 // Implement the Valuer interface for Detail
