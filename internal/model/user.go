@@ -23,7 +23,8 @@ func (User) TableName() string {
 }
 
 type UserDetail struct {
-	Roles []string `json:"roles"`
+	Roles     []string  `json:"roles"`
+	Addresses []Address `json:"addresses"`
 }
 
 // Implement the Valuer interface for Detail

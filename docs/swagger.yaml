@@ -20,6 +20,30 @@ definitions:
       password:
         type: string
     type: object
+  model.Order:
+    properties:
+      created_at:
+        type: string
+      detail:
+        $ref: '#/definitions/model.OrderDetail'
+      id:
+        type: integer
+      shop_id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  model.OrderDetail:
+    properties:
+      user_detail:
+        $ref: '#/definitions/model.UserDetail'
+      warehouse_detail:
+        $ref: '#/definitions/model.WarehouseDetail'
+    type: object
   model.Product:
     properties:
       code:
@@ -110,6 +134,10 @@ definitions:
     type: object
   model.UserDetail:
     properties:
+      addresses:
+        items:
+          $ref: '#/definitions/model.Address'
+        type: array
       roles:
         items:
           type: string
@@ -208,6 +236,135 @@ paths:
       summary: Sign Up
       tags:
       - users
+  /orders:
+    get:
+      description: Retrieve all order in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get all order
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Create Order
+      parameters:
+      - description: Order details
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/model.Order'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Create Order
+      tags:
+      - orders
+  /orders/{id}:
+    delete:
+      description: Remove an order from the system by its ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Delete an order by ID
+      tags:
+      - orders
+    get:
+      description: Retrieve an order by its ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get an order by ID
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      description: Update order details
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order details
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/model.Order'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Update an existing order
+      tags:
+      - orders
   /products:
     get:
       description: Retrieve all product in the system
