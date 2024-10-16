@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"simcomm-monolith/internal/model"
 
 	log "github.com/labstack/gommon/log"
@@ -73,6 +74,8 @@ type WarehouseStoredProductRepository interface {
 	WSPGetAll(ctx context.Context) ([]model.WarehouseStoredProduct, error)
 	WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error
 	WSPDelete(ctx context.Context, id int) error
+
+	WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error)
 }
 
 // Create inserts a new warehousestoredproduct into the database
@@ -113,4 +116,17 @@ func (r *postgresWarehouseRepository) WSPDelete(ctx context.Context, id int) err
 		return err
 	}
 	return nil
+}
+
+func (r *postgresWarehouseRepository) WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error) {
+	var warehousestoredproduct model.WarehouseStoredProduct
+	if err := r.db.WithContext(ctx).
+		Where("warehouse_id = ? AND shop_product_id = ?", warehouseID, shopProductID).
+		First(&warehousestoredproduct).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("product not found")
+		}
+		return nil, err
+	}
+	return &warehousestoredproduct, nil
 }

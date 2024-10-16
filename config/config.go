@@ -11,13 +11,14 @@ type Config struct {
 	ServerConfig    ServerConfig    `mapstructure:"server"`
 	RedisConfig     RedisConfig     `mapstructure:"redis"`
 	DBConfig        DBConfig        `mapstructure:"database"`
+	RabbitMQConfig  RabbitMQConfig  `mapstructure:"rabbitmq"`
 	AuthTokenConfig AuthTokenConfig `mapstructure:"auth-token"`
 }
 
 type ServerConfig struct {
-	Host string 	`mapstructure:"host"`
-	Port int    	`mapstructure:"port"`
-	Env  string		`mapstructure:"env"`
+	Host string `mapstructure:"host"`
+	Port int    `mapstructure:"port"`
+	Env  string `mapstructure:"env"`
 }
 
 type RedisConfig struct {
@@ -33,6 +34,12 @@ type DBConfig struct {
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"db_name"`
+}
+
+type RabbitMQConfig struct {
+	Host     string `mapstructure:"host"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
 }
 
 type AuthTokenConfig struct {
@@ -61,4 +68,3 @@ func GetConfig() *Config {
 
 	return &cfg
 }
-

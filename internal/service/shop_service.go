@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"simcomm-monolith/config"
 	"simcomm-monolith/internal/model"
 	"simcomm-monolith/internal/repository"
 	"simcomm-monolith/util"
 
 	log "github.com/labstack/gommon/log"
+	"golang.org/x/sync/errgroup"
+	"gorm.io/gorm"
 )
 
 // ShopService defines the methods for the Shop service
@@ -19,18 +22,24 @@ type ShopService interface {
 	Delete(ctx context.Context, id int) error
 
 	ShopProductService
+
+	CreateTransferProduct(ctx context.Context, tp *model.TransferProduct) error
 }
 
 type shopService struct {
+	wspSvc    WarehouseService
 	repo      repository.ShopRepository
 	redisRepo repository.RedisRepository
+	queue     repository.Queue
 	cfg       *config.Config
 }
 
-func NewShopService(repo repository.ShopRepository, redisRepo repository.RedisRepository, cfg *config.Config) *shopService {
+func NewShopService(wspSvc WarehouseService, repo repository.ShopRepository, redisRepo repository.RedisRepository, q repository.Queue, cfg *config.Config) *shopService {
 	return &shopService{
+		wspSvc:    wspSvc,
 		repo:      repo,
 		redisRepo: redisRepo,
+		queue:     q,
 		cfg:       cfg,
 	}
 }
@@ -96,4 +105,64 @@ func (s *shopService) ShopProductServiceUpdate(ctx context.Context, shopproduct 
 
 func (s *shopService) ShopProductServiceDelete(ctx context.Context, id int) error {
 	return s.repo.ShopProductRepositoryDelete(ctx, id)
+}
+
+func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.TransferProduct) error {
+	timeNow := util.TimeNow()
+	chShopProduct := make(chan model.ShopProduct, 1)
+	eg, egCtx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		shopProduct, err := s.ShopProductServiceGet(egCtx, tp.ShopProductID)
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return err
+		}
+		chShopProduct <- *shopProduct
+		return nil
+	})
+	var shopProduct = <-chShopProduct
+
+	// chWSPSource := make(chan model.WarehouseStoredProduct, 1)
+	// eg.Go(func() error {
+	// 	wspSource, err := s.wspSvc.WSPGetByShopProductID(egCtx, tp.ShopProductID, tp.WarehouseIDSource)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	chWSPSource <- *wspSource
+	// 	return nil
+	// })
+	// var wspSource = <-chWSPSource
+
+	if err := eg.Wait(); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	if shopProduct.ID < 1 {
+		return errors.New("shop product not found")
+	}
+
+	// if wspSource.ID < 1 || wspSource.Stock < tp.StockToTransfer {
+	// 	return errors.New("stored product not enough")
+	// }
+
+	shopProduct.Stock = shopProduct.Stock - tp.StockToTransfer
+	shopProduct.UpdatedAt = timeNow
+
+	tp.Status = "OTW"
+	tp.Detail = model.TransferProductDetail{
+		Histories: []model.TransferProductHostory{
+			{
+				Status:    tp.Status,
+				Timestamp: timeNow,
+			},
+		},
+	}
+
+	err := s.repo.ShopProductRepositoryCreateTransferProduct(ctx, tp, &shopProduct)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }

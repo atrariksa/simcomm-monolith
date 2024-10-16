@@ -152,6 +152,41 @@ definitions:
       role:
         type: string
     type: object
+  model.TransferProduct:
+    properties:
+      created_at:
+        type: string
+      detail:
+        $ref: '#/definitions/model.TransferProductDetail'
+      id:
+        type: integer
+      shop_product_id:
+        type: integer
+      status:
+        type: string
+      stock_to_transfer:
+        type: integer
+      updated_at:
+        type: string
+      warehouse_id_destination:
+        type: integer
+      warehouse_id_source:
+        type: integer
+    type: object
+  model.TransferProductDetail:
+    properties:
+      histories:
+        items:
+          $ref: '#/definitions/model.TransferProductHostory'
+        type: array
+    type: object
+  model.TransferProductHostory:
+    properties:
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
   model.User:
     properties:
       created_at:
@@ -226,6 +261,8 @@ definitions:
         type: integer
       updated_at:
         type: string
+      warehouse_id:
+        type: integer
     type: object
 info:
   contact: {}
@@ -804,6 +841,35 @@ paths:
           schema:
             $ref: '#/definitions/model.Response'
       summary: Update an existing shop
+      tags:
+      - shops
+  /shops/transfer:
+    post:
+      description: Remove an shopproduct from the system by its ID
+      parameters:
+      - description: ShopProduct ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Transfer Product Request
+        in: body
+        name: transferProduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.TransferProduct'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Transfer Product an shopproduct by ID
       tags:
       - shops
   /users:

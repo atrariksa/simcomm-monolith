@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"simcomm-monolith/config"
 	"simcomm-monolith/internal/model"
 	"simcomm-monolith/internal/repository"
 	"simcomm-monolith/util"
 
 	log "github.com/labstack/gommon/log"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // WarehouseService defines the methods for the Warehouse service
@@ -19,6 +21,9 @@ type WarehouseService interface {
 	Delete(ctx context.Context, id int) error
 
 	WarehouseStoredProductService
+
+	WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error)
+	ProcessTPQueue(ctx context.Context, msg amqp.Delivery) error
 }
 
 type warehouseService struct {
@@ -96,4 +101,35 @@ func (s *warehouseService) WSPUpdate(ctx context.Context, warehousestoredproduct
 
 func (s *warehouseService) WSPDelete(ctx context.Context, id int) error {
 	return s.repo.WSPDelete(ctx, id)
+}
+
+func (s *warehouseService) WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error) {
+	wsp, err := s.repo.WSPGetByShopProductID(ctx, shopProductID, warehouseID)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return wsp, nil
+}
+
+func (s *warehouseService) ProcessTPQueue(ctx context.Context, msg amqp.Delivery) error {
+	var tp model.TransferProduct
+	err := json.Unmarshal(msg.Body, &tp)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	wspSource, err := s.WSPGetByShopProductID(ctx, tp.ShopProductID, tp.WarehouseIDSource)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	wspSource.Stock = wspSource.Stock - tp.StockToTransfer
+	wspSource.UpdatedAt = util.TimeNow()
+	err = s.WSPUpdate(ctx, wspSource)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
 }

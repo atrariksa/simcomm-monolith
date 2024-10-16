@@ -762,6 +762,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/shops/transfer": {
+            "post": {
+                "description": "Remove an shopproduct from the system by its ID",
+                "tags": [
+                    "shops"
+                ],
+                "summary": "Transfer Product an shopproduct by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ShopProduct ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Transfer Product Request",
+                        "name": "transferProduct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TransferProduct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/shops/{id}": {
             "get": {
                 "description": "Retrieve an shop by its ID",
@@ -1710,6 +1754,60 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TransferProduct": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "detail": {
+                    "$ref": "#/definitions/model.TransferProductDetail"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shop_product_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "stock_to_transfer": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "warehouse_id_destination": {
+                    "type": "integer"
+                },
+                "warehouse_id_source": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.TransferProductDetail": {
+            "type": "object",
+            "properties": {
+                "histories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TransferProductHostory"
+                    }
+                }
+            }
+        },
+        "model.TransferProductHostory": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "model.User": {
             "type": "object",
             "properties": {
@@ -1822,6 +1920,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "integer"
                 }
             }
         }

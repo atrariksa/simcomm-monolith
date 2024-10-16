@@ -80,3 +80,42 @@ func (d *ShopProductDetails) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(bytes, d)
 }
+
+type TransferProduct struct {
+	ID                     int                   `json:"id" gorm:"column:id"`
+	ShopProductID          int                   `json:"shop_product_id" gorm:"column:shop_product_id"`
+	StockToTransfer        int                   `json:"stock_to_transfer" gorm:"column:stock_to_transfer"`
+	WarehouseIDSource      int                   `json:"warehouse_id_source" gorm:"column:warehouse_id_source"`
+	WarehouseIDDestination int                   `json:"warehouse_id_destination" gorm:"column:warehouse_id_destination"`
+	Status                 string                `json:"status" gorm:"column:status"`
+	Detail                 TransferProductDetail `json:"detail" gorm:"type:jsonb;column:detail"`
+	CreatedAt              time.Time             `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt              time.Time             `json:"updated_at" gorm:"column:updated_at"`
+}
+
+func (TransferProduct) TableName() string {
+	return "transferred_products"
+}
+
+type TransferProductDetail struct {
+	Histories []TransferProductHostory `json:"histories"`
+}
+
+type TransferProductHostory struct {
+	Status    string    `json:"status"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// Implement the Valuer interface for Detail
+func (d *TransferProductDetail) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+// Implement the Scanner interface for Detail
+func (d *TransferProductDetail) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan Detail")
+	}
+	return json.Unmarshal(bytes, d)
+}

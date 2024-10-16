@@ -30,6 +30,7 @@ type WarehouseDetail struct {
 
 type WarehouseStoredProduct struct {
 	ID              int       `json:"id" gorm:"column:id"`
+	WarehouseID     int       `json:"warehouse_id" gorm:"column:warehouse_id"`
 	ShopProductID   int       `json:"shop_product_id" gorm:"column:shop_product_id"`
 	ShopProductName string    `json:"shop_product_name" gorm:"column:shop_product_name"`
 	Stock           int       `json:"stock" gorm:"column:stock"`

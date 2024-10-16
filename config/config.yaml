@@ -19,3 +19,8 @@ database:
 auth-token:
   duration: 600
   secretkey: "anysecret"
+
+rabbitmq:
+  host: "localhost:5672"
+  user: "simcomm"
+  password: "simcomm"

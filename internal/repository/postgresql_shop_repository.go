@@ -73,6 +73,8 @@ type ShopProductRepository interface {
 	ShopProductRepositoryGetAll(ctx context.Context) ([]model.ShopProduct, error)
 	ShopProductRepositoryUpdate(ctx context.Context, shopproduct *model.ShopProduct) error
 	ShopProductRepositoryDelete(ctx context.Context, id int) error
+
+	ShopProductRepositoryCreateTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct) error
 }
 
 // Create inserts a new shopproduct into the database
@@ -113,4 +115,24 @@ func (r *postgresShopRepository) ShopProductRepositoryDelete(ctx context.Context
 		return err
 	}
 	return nil
+}
+
+func (r *postgresShopRepository) ShopProductRepositoryCreateTransferProduct(
+	ctx context.Context,
+	tp *model.TransferProduct,
+	sp *model.ShopProduct) error {
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		errT := tx.Save(tp).Error
+		if errT != nil {
+			return errT
+		}
+		errT = tx.Save(sp).Error
+		if errT != nil {
+			return errT
+		}
+		return nil
+	})
+
+	return err
 }
