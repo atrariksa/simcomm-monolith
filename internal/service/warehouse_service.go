@@ -29,13 +29,15 @@ type WarehouseService interface {
 type warehouseService struct {
 	repo      repository.WarehouseRepository
 	redisRepo repository.RedisRepository
+	queue     repository.Queue
 	cfg       *config.Config
 }
 
-func NewWarehouseService(repo repository.WarehouseRepository, redisRepo repository.RedisRepository, cfg *config.Config) *warehouseService {
+func NewWarehouseService(repo repository.WarehouseRepository, redisRepo repository.RedisRepository, q repository.Queue, cfg *config.Config) *warehouseService {
 	return &warehouseService{
 		repo:      repo,
 		redisRepo: redisRepo,
+		queue:     q,
 		cfg:       cfg,
 	}
 }
@@ -124,9 +126,21 @@ func (s *warehouseService) ProcessTPQueue(ctx context.Context, msg amqp.Delivery
 		log.Error(err)
 		return err
 	}
-	wspSource.Stock = wspSource.Stock - tp.StockToTransfer
-	wspSource.UpdatedAt = util.TimeNow()
-	err = s.WSPUpdate(ctx, wspSource)
+
+	if wspSource.Stock-tp.StockToTransfer < 0 {
+		rtp := model.RevertTransferProduct{
+			TransferProductID:      tp.ID,
+			ShopProductID:          tp.ShopProductID,
+			StockToTransfer:        tp.StockToTransfer,
+			WarehouseIDSource:      tp.WarehouseIDSource,
+			WarehouseIDDestination: tp.WarehouseIDDestination,
+			Note:                   util.ErrWarehouseStockNotEnough,
+		}
+		s.queue.Publish(ctx, rtp)
+		return nil
+	}
+
+	err = s.repo.WSPSubstractStock(ctx, wspSource, tp.StockToTransfer)
 	if err != nil {
 		log.Error(err)
 		return err

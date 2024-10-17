@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"simcomm-monolith/config"
 	"simcomm-monolith/internal/model"
@@ -9,6 +10,7 @@ import (
 	"simcomm-monolith/util"
 
 	log "github.com/labstack/gommon/log"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
@@ -24,6 +26,7 @@ type ShopService interface {
 	ShopProductService
 
 	CreateTransferProduct(ctx context.Context, tp *model.TransferProduct) error
+	ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) error
 }
 
 type shopService struct {
@@ -121,16 +124,16 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 	})
 	var shopProduct = <-chShopProduct
 
-	// chWSPSource := make(chan model.WarehouseStoredProduct, 1)
-	// eg.Go(func() error {
-	// 	wspSource, err := s.wspSvc.WSPGetByShopProductID(egCtx, tp.ShopProductID, tp.WarehouseIDSource)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	chWSPSource <- *wspSource
-	// 	return nil
-	// })
-	// var wspSource = <-chWSPSource
+	chWSPSource := make(chan model.WarehouseStoredProduct, 1)
+	eg.Go(func() error {
+		wspSource, err := s.wspSvc.WSPGetByShopProductID(egCtx, tp.ShopProductID, tp.WarehouseIDSource)
+		if err != nil {
+			return err
+		}
+		chWSPSource <- *wspSource
+		return nil
+	})
+	var wspSource = <-chWSPSource
 
 	if err := eg.Wait(); err != nil {
 		log.Error(err)
@@ -141,9 +144,9 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 		return errors.New("shop product not found")
 	}
 
-	// if wspSource.ID < 1 || wspSource.Stock < tp.StockToTransfer {
-	// 	return errors.New("stored product not enough")
-	// }
+	if wspSource.ID < 1 || wspSource.Stock < tp.StockToTransfer {
+		return errors.New("stored product not enough")
+	}
 
 	shopProduct.Stock = shopProduct.Stock - tp.StockToTransfer
 	shopProduct.UpdatedAt = timeNow
@@ -158,7 +161,76 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 		},
 	}
 
-	err := s.repo.ShopProductRepositoryCreateTransferProduct(ctx, tp, &shopProduct)
+	err := s.repo.ShopProductRepositoryCreateTransferProduct(ctx, tp, &shopProduct, s.queue)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *shopService) ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) error {
+	var rtp model.RevertTransferProduct
+	err := json.Unmarshal(msg.Body, &rtp)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	eg, egCtx := errgroup.WithContext(ctx)
+
+	chShopProduct := make(chan model.ShopProduct, 1)
+	eg.Go(func() error {
+		shopProduct, err := s.ShopProductServiceGet(egCtx, rtp.ShopProductID)
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return err
+		}
+		chShopProduct <- *shopProduct
+		return nil
+	})
+	var shopProduct = <-chShopProduct
+
+	chTP := make(chan model.TransferProduct, 1)
+	eg.Go(func() error {
+		tp, err := s.repo.ShopProductRepositoryGetTransferProduct(egCtx, rtp.TransferProductID)
+		if err != nil {
+			return err
+		}
+		chTP <- *tp
+		return nil
+	})
+	var tp = <-chTP
+
+	if err := eg.Wait(); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	if shopProduct.ID < 1 {
+		log.Error(errors.New("shop product not found"))
+		return nil
+	}
+
+	if tp.ID < 1 {
+		log.Error(errors.New("data transfer product not found"))
+		return nil
+	}
+
+	timeNow := util.TimeNow()
+
+	tp.UpdatedAt = timeNow
+	tp.Status = "Failed"
+	tp.Detail.Histories = append(tp.Detail.Histories, model.TransferProductHostory{
+		Timestamp: timeNow,
+		Status:    tp.Status,
+		Note:      rtp.Note,
+	})
+
+	shopProduct.Stock = shopProduct.Stock + tp.StockToTransfer
+	shopProduct.UpdatedAt = timeNow
+
+	err = s.repo.ShopProductRepositoryRevertTransferProduct(ctx, &tp, &shopProduct, s.queue)
 	if err != nil {
 		log.Error(err)
 		return err

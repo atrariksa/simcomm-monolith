@@ -104,6 +104,7 @@ type TransferProductDetail struct {
 type TransferProductHostory struct {
 	Status    string    `json:"status"`
 	Timestamp time.Time `json:"timestamp"`
+	Note      string    `json:"note"`
 }
 
 // Implement the Valuer interface for Detail
@@ -118,4 +119,13 @@ func (d *TransferProductDetail) Scan(value interface{}) error {
 		return errors.New("failed to scan Detail")
 	}
 	return json.Unmarshal(bytes, d)
+}
+
+type RevertTransferProduct struct {
+	TransferProductID      int    `json:"transfer_product_id" gorm:"column:transfer_product_id"`
+	ShopProductID          int    `json:"shop_product_id" gorm:"column:shop_product_id"`
+	StockToTransfer        int    `json:"stock_to_transfer" gorm:"column:stock_to_transfer"`
+	WarehouseIDSource      int    `json:"warehouse_id_source" gorm:"column:warehouse_id_source"`
+	WarehouseIDDestination int    `json:"warehouse_id_destination" gorm:"column:warehouse_id_destination"`
+	Note                   string `json:"note"`
 }

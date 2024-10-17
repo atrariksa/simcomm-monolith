@@ -74,7 +74,9 @@ type ShopProductRepository interface {
 	ShopProductRepositoryUpdate(ctx context.Context, shopproduct *model.ShopProduct) error
 	ShopProductRepositoryDelete(ctx context.Context, id int) error
 
-	ShopProductRepositoryCreateTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct) error
+	ShopProductRepositoryCreateTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct, q Queue) error
+	ShopProductRepositoryGetTransferProduct(ctx context.Context, id int) (*model.TransferProduct, error)
+	ShopProductRepositoryRevertTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct, q Queue) error
 }
 
 // Create inserts a new shopproduct into the database
@@ -120,19 +122,60 @@ func (r *postgresShopRepository) ShopProductRepositoryDelete(ctx context.Context
 func (r *postgresShopRepository) ShopProductRepositoryCreateTransferProduct(
 	ctx context.Context,
 	tp *model.TransferProduct,
-	sp *model.ShopProduct) error {
+	sp *model.ShopProduct,
+	q Queue,
+) error {
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		errT := tx.Save(tp).Error
 		if errT != nil {
 			return errT
 		}
-		errT = tx.Save(sp).Error
+		errT = tx.
+			Where("stock > ? and id = ? ", tp.StockToTransfer, sp.ID).
+			Save(sp).Error
 		if errT != nil {
 			return errT
 		}
-		return nil
+
+		return q.Publish(ctx, tp)
 	})
 
 	return err
+}
+
+func (r *postgresShopRepository) ShopProductRepositoryRevertTransferProduct(
+	ctx context.Context,
+	tp *model.TransferProduct,
+	sp *model.ShopProduct,
+	q Queue) error {
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		errT := tx.Save(tp).Error
+		if errT != nil {
+			return errT
+		}
+		errT = tx.
+			Where("stock = ? and id = ? ", sp.Stock-tp.StockToTransfer, sp.ID).
+			Save(sp).Error
+		if errT != nil {
+			return errT
+		}
+
+		return q.Publish(ctx, tp)
+	})
+
+	return err
+}
+
+func (r *postgresShopRepository) ShopProductRepositoryGetTransferProduct(
+	ctx context.Context,
+	id int) (*model.TransferProduct, error) {
+
+	var tp model.TransferProduct
+	if err := r.db.WithContext(ctx).First(&tp, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &tp, nil
 }

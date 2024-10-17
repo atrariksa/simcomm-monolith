@@ -9,6 +9,7 @@ import (
 const ErrUserAlreadyExists = "user already exists"
 const ErrUserNotFound = "user not found"
 const ErrInternalServerError = "internal server error"
+const ErrWarehouseStockNotEnough = "Stock Not Enough at Warehouse"
 
 const DateFormatYYYYMMDD = "2006-01-02"
 const DateFormatYYYYMMDDTHHmmss = "2006-01-02T15:04:05"

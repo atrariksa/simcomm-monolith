@@ -56,9 +56,10 @@ func SetupServer() {
 	redisClient := util.GetRedisClient(cfg)
 	rabbitMQConnection := util.GetRabbitMQConnection(cfg.RabbitMQConfig)
 	tpQueue := repository.NewQueueDeclare(rabbitMQConnection, "transfer_product")
+	rtpQueue := repository.NewQueueDeclare(rabbitMQConnection, "revert_transfer_product")
 
 	var queues []repository.Queue
-	queues = append(queues, tpQueue)
+	queues = append(queues, tpQueue, rtpQueue)
 
 	userRepo := repository.NewPostgreUserRepository(db)
 	redisRepo := repository.NewRedisRepository(redisClient, cfg)
@@ -70,12 +71,13 @@ func SetupServer() {
 	RegisterProductHandler(e, productSvc)
 
 	warehouseRepo := repository.NewPostgreWarehouseRepository(db)
-	warehouseSvc := service.NewWarehouseService(warehouseRepo, redisRepo, cfg)
+	warehouseSvc := service.NewWarehouseService(warehouseRepo, redisRepo, rtpQueue, cfg)
 	tpQueue.AddReceiver(context.Background(), warehouseSvc.ProcessTPQueue)
 	RegisterWarehouseHandler(e, warehouseSvc)
 
 	shopRepo := repository.NewPostgreShopRepository(db)
 	shopSvc := service.NewShopService(warehouseSvc, shopRepo, redisRepo, tpQueue, cfg)
+	rtpQueue.AddReceiver(context.Background(), shopSvc.ProcessRTPQueue)
 	RegisterShopHandler(e, shopSvc)
 
 	orderRepo := repository.NewPostgreOrderRepository(db)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"simcomm-monolith/internal/model"
+	"simcomm-monolith/util"
 
 	log "github.com/labstack/gommon/log"
 	"gorm.io/gorm"
@@ -76,6 +77,7 @@ type WarehouseStoredProductRepository interface {
 	WSPDelete(ctx context.Context, id int) error
 
 	WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error)
+	WSPSubstractStock(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct, subtrahend int) error
 }
 
 // Create inserts a new warehousestoredproduct into the database
@@ -104,6 +106,19 @@ func (r *postgresWarehouseRepository) WSPGetAll(ctx context.Context) ([]model.Wa
 // Update updates an existing warehousestoredproduct
 func (r *postgresWarehouseRepository) WSPUpdate(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct) error {
 	if err := r.db.WithContext(ctx).Save(warehousestoredproduct).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *postgresWarehouseRepository) WSPSubstractStock(ctx context.Context, wsp *model.WarehouseStoredProduct, subtrahend int) error {
+	wsp.Stock = wsp.Stock - subtrahend
+	wsp.UpdatedAt = util.TimeNow()
+
+	if err := r.db.WithContext(ctx).
+		Where("stock > ? and id = ? ", subtrahend, wsp.ID).
+		Save(wsp).Error; err != nil {
+
 		return err
 	}
 	return nil
