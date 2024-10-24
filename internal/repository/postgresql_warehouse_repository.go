@@ -78,6 +78,7 @@ type WarehouseStoredProductRepository interface {
 
 	WSPGetByShopProductID(ctx context.Context, shopProductID int, warehouseID int) (*model.WarehouseStoredProduct, error)
 	WSPSubstractStock(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct, subtrahend int) error
+	WSPAddStock(ctx context.Context, warehousestoredproduct *model.WarehouseStoredProduct, addend int) error
 }
 
 // Create inserts a new warehousestoredproduct into the database
@@ -115,10 +116,20 @@ func (r *postgresWarehouseRepository) WSPSubstractStock(ctx context.Context, wsp
 	wsp.Stock = wsp.Stock - subtrahend
 	wsp.UpdatedAt = util.TimeNow()
 
-	if err := r.db.WithContext(ctx).
+	if err := r.db.WithContext(ctx).Debug().
+		Model(&model.WarehouseStoredProduct{}).
 		Where("stock > ? and id = ? ", subtrahend, wsp.ID).
-		Save(wsp).Error; err != nil {
+		Update("stock", gorm.Expr("stock - ?", subtrahend)).Error; err != nil {
+		return err
+	}
+	return nil
+}
 
+func (r *postgresWarehouseRepository) WSPAddStock(ctx context.Context, wsp *model.WarehouseStoredProduct, addend int) error {
+	if err := r.db.WithContext(ctx).Debug().
+		Model(&model.WarehouseStoredProduct{}).
+		Where("id = ? ", wsp.ID).
+		Update("stock", gorm.Expr("stock + ?", addend)).Error; err != nil {
 		return err
 	}
 	return nil

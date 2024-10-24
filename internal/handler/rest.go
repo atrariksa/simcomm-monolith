@@ -55,11 +55,12 @@ func SetupServer() {
 	db := util.GetDB(cfg)
 	redisClient := util.GetRedisClient(cfg)
 	rabbitMQConnection := util.GetRabbitMQConnection(cfg.RabbitMQConfig)
-	tpQueue := repository.NewQueueDeclare(rabbitMQConnection, "transfer_product")
-	rtpQueue := repository.NewQueueDeclare(rabbitMQConnection, "revert_transfer_product")
+	tpQueue := repository.NewQueueDeclare(rabbitMQConnection, repository.TPQueueName)
+	utpQueue := repository.NewQueueDeclare(rabbitMQConnection, repository.UTPQueueName)
 
-	var queues []repository.Queue
-	queues = append(queues, tpQueue, rtpQueue)
+	var queues map[string]repository.Queue = make(map[string]repository.Queue)
+	queues[tpQueue.Name] = tpQueue
+	queues[utpQueue.Name] = utpQueue
 
 	userRepo := repository.NewPostgreUserRepository(db)
 	redisRepo := repository.NewRedisRepository(redisClient, cfg)
@@ -71,18 +72,26 @@ func SetupServer() {
 	RegisterProductHandler(e, productSvc)
 
 	warehouseRepo := repository.NewPostgreWarehouseRepository(db)
-	warehouseSvc := service.NewWarehouseService(warehouseRepo, redisRepo, rtpQueue, cfg)
+	warehouseSvc := service.NewWarehouseService(warehouseRepo, redisRepo, utpQueue, cfg)
 	tpQueue.AddReceiver(context.Background(), warehouseSvc.ProcessTPQueue)
+	utpQueue.AddReceiver(context.Background(), warehouseSvc.ProcessUTPQueue)
 	RegisterWarehouseHandler(e, warehouseSvc)
 
 	shopRepo := repository.NewPostgreShopRepository(db)
-	shopSvc := service.NewShopService(warehouseSvc, shopRepo, redisRepo, tpQueue, cfg)
-	rtpQueue.AddReceiver(context.Background(), shopSvc.ProcessRTPQueue)
+	shopSvc := service.NewShopService(warehouseSvc, shopRepo, redisRepo, queues, cfg)
 	RegisterShopHandler(e, shopSvc)
 
 	orderRepo := repository.NewPostgreOrderRepository(db)
 	orderSvc := service.NewOrderService(orderRepo, redisRepo, cfg)
 	RegisterOrderHandler(e, orderSvc)
+
+	sac := service.GetNewServiceAPIClient()
+	sac.AddUserService(svc)
+	sac.AddProductService(productSvc)
+	sac.AddOrderService(orderSvc)
+	sac.AddShopService(shopSvc)
+	sac.AddWarehouseService(warehouseSvc)
+	service.SvcClients = sac
 
 	// Start server
 	// e.Logger.Fatal(e.Start(fmt.Sprintf("%v", cfg.ServerConfig.Host) + ":" + fmt.Sprintf("%v", cfg.ServerConfig.Port)))
@@ -120,13 +129,13 @@ func HandleServer(e *echo.Echo, cfg *config.Config, qh QueueHandler) {
 }
 
 type QueueHandler struct {
-	queues []repository.Queue
+	queues map[string]repository.Queue
 	conn   *amqp.Connection
 }
 
 func (qh *QueueHandler) Close() {
-	for i := 0; i < len(qh.queues); i++ {
-		qh.queues[i].Close()
+	for _, v := range qh.queues {
+		v.Close()
 	}
 	qh.conn.Close()
 }

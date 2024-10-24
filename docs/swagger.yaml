@@ -182,10 +182,29 @@ definitions:
     type: object
   model.TransferProductHostory:
     properties:
+      note:
+        type: string
       status:
         type: string
       timestamp:
         type: string
+    type: object
+  model.UpdateTransferProduct:
+    properties:
+      note:
+        type: string
+      shop_product_id:
+        type: integer
+      status:
+        type: string
+      stock_to_transfer:
+        type: integer
+      transfer_product_id:
+        type: integer
+      warehouse_id_destination:
+        type: integer
+      warehouse_id_source:
+        type: integer
     type: object
   model.User:
     properties:
@@ -246,6 +265,8 @@ definitions:
         $ref: '#/definitions/model.Contact'
       image_url:
         type: string
+      volume:
+        type: integer
     type: object
   model.WarehouseStoredProduct:
     properties:
@@ -847,11 +868,6 @@ paths:
     post:
       description: Remove an shopproduct from the system by its ID
       parameters:
-      - description: ShopProduct ID
-        in: path
-        name: id
-        required: true
-        type: integer
       - description: Transfer Product Request
         in: body
         name: transferProduct
@@ -870,6 +886,29 @@ paths:
           schema:
             $ref: '#/definitions/model.Response'
       summary: Transfer Product an shopproduct by ID
+      tags:
+      - shops
+    put:
+      description: complete the transfer product
+      parameters:
+      - description: Transfer Product Request
+        in: body
+        name: transferProduct
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateTransferProduct'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Complete Transfer Product an shopproduct by ID
       tags:
       - shops
   /users:

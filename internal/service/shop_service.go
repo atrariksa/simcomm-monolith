@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"simcomm-monolith/config"
 	"simcomm-monolith/internal/model"
 	"simcomm-monolith/internal/repository"
@@ -27,22 +28,23 @@ type ShopService interface {
 
 	CreateTransferProduct(ctx context.Context, tp *model.TransferProduct) error
 	ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) error
+	UpdateTransferProduct(ctx context.Context, utp *model.UpdateTransferProduct) error
 }
 
 type shopService struct {
 	wspSvc    WarehouseService
 	repo      repository.ShopRepository
 	redisRepo repository.RedisRepository
-	queue     repository.Queue
+	queues    map[string]repository.Queue
 	cfg       *config.Config
 }
 
-func NewShopService(wspSvc WarehouseService, repo repository.ShopRepository, redisRepo repository.RedisRepository, q repository.Queue, cfg *config.Config) *shopService {
+func NewShopService(wspSvc WarehouseService, repo repository.ShopRepository, redisRepo repository.RedisRepository, q map[string]repository.Queue, cfg *config.Config) *shopService {
 	return &shopService{
 		wspSvc:    wspSvc,
 		repo:      repo,
 		redisRepo: redisRepo,
-		queue:     q,
+		queues:    q,
 		cfg:       cfg,
 	}
 }
@@ -150,6 +152,14 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 
 	shopProduct.Stock = shopProduct.Stock - tp.StockToTransfer
 	shopProduct.UpdatedAt = timeNow
+	spDetails := shopProduct.Detail.ShopProductDetails
+	for i, v := range spDetails {
+		if v.WarehouseID == wspSource.ID {
+			spDetails[i].Stock = v.Stock - tp.StockToTransfer
+			break
+		}
+	}
+	shopProduct.Detail.ShopProductDetails = spDetails
 
 	tp.Status = "OTW"
 	tp.Detail = model.TransferProductDetail{
@@ -161,7 +171,7 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 		},
 	}
 
-	err := s.repo.ShopProductRepositoryCreateTransferProduct(ctx, tp, &shopProduct, s.queue)
+	err := s.repo.ShopProductRepositoryCreateTransferProduct(ctx, tp, &shopProduct, s.queues[repository.TPQueueName])
 	if err != nil {
 		log.Error(err)
 		return err
@@ -171,7 +181,7 @@ func (s *shopService) CreateTransferProduct(ctx context.Context, tp *model.Trans
 }
 
 func (s *shopService) ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) error {
-	var rtp model.RevertTransferProduct
+	var rtp model.UpdateTransferProduct
 	err := json.Unmarshal(msg.Body, &rtp)
 	if err != nil {
 		log.Error(err)
@@ -220,7 +230,7 @@ func (s *shopService) ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) er
 	timeNow := util.TimeNow()
 
 	tp.UpdatedAt = timeNow
-	tp.Status = "Failed"
+	tp.Status = model.TransferProductStatus.Failed
 	tp.Detail.Histories = append(tp.Detail.Histories, model.TransferProductHostory{
 		Timestamp: timeNow,
 		Status:    tp.Status,
@@ -230,11 +240,87 @@ func (s *shopService) ProcessRTPQueue(ctx context.Context, msg amqp.Delivery) er
 	shopProduct.Stock = shopProduct.Stock + tp.StockToTransfer
 	shopProduct.UpdatedAt = timeNow
 
-	err = s.repo.ShopProductRepositoryRevertTransferProduct(ctx, &tp, &shopProduct, s.queue)
+	err = s.repo.ShopProductRepositoryUpdateTransferProduct(ctx, &tp, &shopProduct, s.queues[repository.UTPQueueName])
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
 	return nil
+}
+
+func (s *shopService) UpdateTransferProduct(ctx context.Context, utp *model.UpdateTransferProduct) error {
+	tp, err := s.repo.ShopProductRepositoryGetTransferProduct(ctx, utp.TransferProductID)
+	if err != nil {
+		return err
+	}
+
+	if tp.ID < 1 {
+		log.Error(errors.New("data transfer product not found"))
+		return nil
+	}
+
+	timeNow := util.TimeNow()
+	tp.UpdatedAt = timeNow
+	tp.Status = utp.Status
+	tp.Detail.Histories = append(tp.Detail.Histories, model.TransferProductHostory{
+		Timestamp: timeNow,
+		Status:    tp.Status,
+		Note:      utp.Note,
+	})
+	shopProduct, err := s.ShopProductServiceGet(ctx, utp.ShopProductID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err
+	}
+
+	if shopProduct.ID < 1 {
+		err = fmt.Errorf("shop product not found : %v", utp.ShopProductID)
+		log.Error(err)
+		return err
+	}
+
+	if utp.Status == model.TransferProductStatus.Completed {
+		spDetails := shopProduct.Detail.ShopProductDetails
+		for i, v := range spDetails {
+			if v.WarehouseID == tp.WarehouseIDDestination {
+				spDetails[i].Stock = v.Stock + tp.StockToTransfer
+				break
+			}
+		}
+		shopProduct.Detail.ShopProductDetails = spDetails
+		err = s.repo.ShopProductRepositoryUpdateTransferProduct(ctx, tp, shopProduct, s.queues[repository.UTPQueueName])
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	}
+
+	spDetails := shopProduct.Detail.ShopProductDetails
+	for i, v := range spDetails {
+		if v.WarehouseID == tp.WarehouseIDSource {
+			spDetails[i].Stock = v.Stock + tp.StockToTransfer
+			break
+		}
+	}
+	shopProduct.Detail.ShopProductDetails = spDetails
+
+	if utp.Status == model.TransferProductStatus.Canceled {
+		err = s.repo.ShopProductRepositoryUpdateTransferProduct(ctx, tp, shopProduct, s.queues[repository.UTPQueueName])
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	}
+	if utp.Status == model.TransferProductStatus.Failed {
+		err = s.repo.ShopProductRepositoryUpdateTransferProduct(ctx, tp, shopProduct, nil)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	}
+
+	return errors.New("Unprocessed Request")
 }

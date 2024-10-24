@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"simcomm-monolith/config"
 	"simcomm-monolith/internal/model"
 	"simcomm-monolith/internal/repository"
@@ -128,13 +129,14 @@ func (s *warehouseService) ProcessTPQueue(ctx context.Context, msg amqp.Delivery
 	}
 
 	if wspSource.Stock-tp.StockToTransfer < 0 {
-		rtp := model.RevertTransferProduct{
+		rtp := model.UpdateTransferProduct{
 			TransferProductID:      tp.ID,
 			ShopProductID:          tp.ShopProductID,
 			StockToTransfer:        tp.StockToTransfer,
 			WarehouseIDSource:      tp.WarehouseIDSource,
 			WarehouseIDDestination: tp.WarehouseIDDestination,
 			Note:                   util.ErrWarehouseStockNotEnough,
+			Status:                 model.TransferProductStatus.Failed,
 		}
 		s.queue.Publish(ctx, rtp)
 		return nil
@@ -145,5 +147,46 @@ func (s *warehouseService) ProcessTPQueue(ctx context.Context, msg amqp.Delivery
 		log.Error(err)
 		return err
 	}
+	return nil
+}
+
+func (s *warehouseService) ProcessUTPQueue(ctx context.Context, msg amqp.Delivery) error {
+	var utp model.UpdateTransferProduct
+	err := json.Unmarshal(msg.Body, &utp)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	if utp.Status == model.TransferProductStatus.Canceled {
+		wspSource, err := s.WSPGetByShopProductID(ctx, utp.ShopProductID, utp.WarehouseIDSource)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
+		if wspSource.ID < 1 {
+			log.Error(errors.New("product not found"))
+			return nil
+		}
+
+		err = s.repo.WSPAddStock(ctx, wspSource, utp.StockToTransfer)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+	} else {
+		wspDestination, err := s.WSPGetByShopProductID(ctx, utp.ShopProductID, utp.WarehouseIDDestination)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
+		err = s.repo.WSPAddStock(ctx, wspDestination, utp.StockToTransfer)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+	}
+
 	return nil
 }

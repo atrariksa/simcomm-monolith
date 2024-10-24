@@ -8,6 +8,9 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+var TPQueueName = "transfer_product"
+var UTPQueueName = "update_transfer_product"
+
 type Queue interface {
 	Publish(ctx context.Context, product interface{}) error
 	AddReceiver(ctx context.Context, callback func(context.Context, amqp.Delivery) error)

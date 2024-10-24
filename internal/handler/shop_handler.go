@@ -31,6 +31,7 @@ func RegisterShopHandler(e *echo.Echo, svc service.ShopService) {
 	e.DELETE("shop-products/:id", handler.DeleteShopProduct)
 
 	e.POST("shops/transfer", handler.CreateTransferProduct)
+	e.PUT("shops/transfer", handler.UpdateTransferProduct)
 }
 
 func NewShopHandler(service service.ShopService) *ShopHandler {
@@ -287,7 +288,6 @@ func (h *ShopHandler) DeleteShopProduct(c echo.Context) error {
 // @Summary Transfer Product an shopproduct by ID
 // @Description Remove an shopproduct from the system by its ID
 // @Tags shops
-// @Param id path int true "ShopProduct ID"
 // @Param transferProduct body model.TransferProduct true "Transfer Product Request"
 // @Success 200
 // @Failure 400 {object} model.Response
@@ -301,6 +301,29 @@ func (h *ShopHandler) CreateTransferProduct(c echo.Context) error {
 	}
 
 	if err := h.service.CreateTransferProduct(ctx, &transferProduct); err != nil {
+		return c.JSON(http.StatusInternalServerError, model.Response{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, model.Response{Message: "success"})
+}
+
+// UpdateTransferProduct Complete Transfer Product
+// @Summary Complete Transfer Product an shopproduct by ID
+// @Description complete the transfer product
+// @Tags shops
+// @Param transferProduct body model.UpdateTransferProduct true "Transfer Product Request"
+// @Success 200
+// @Failure 400 {object} model.Response
+// @Failure 500 {object} model.Response
+// @Router /shops/transfer [PUT]
+func (h *ShopHandler) UpdateTransferProduct(c echo.Context) error {
+	ctx := c.Request().Context()
+	var updateTransferProduct model.UpdateTransferProduct
+	if err := c.Bind(&updateTransferProduct); err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{Message: "Invalid input"})
+	}
+
+	if err := h.service.UpdateTransferProduct(ctx, &updateTransferProduct); err != nil {
 		return c.JSON(http.StatusInternalServerError, model.Response{Message: err.Error()})
 	}
 

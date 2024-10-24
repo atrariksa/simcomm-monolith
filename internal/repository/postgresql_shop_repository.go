@@ -76,7 +76,7 @@ type ShopProductRepository interface {
 
 	ShopProductRepositoryCreateTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct, q Queue) error
 	ShopProductRepositoryGetTransferProduct(ctx context.Context, id int) (*model.TransferProduct, error)
-	ShopProductRepositoryRevertTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct, q Queue) error
+	ShopProductRepositoryUpdateTransferProduct(ctx context.Context, tp *model.TransferProduct, sp *model.ShopProduct, q Queue) error
 }
 
 // Create inserts a new shopproduct into the database
@@ -127,14 +127,15 @@ func (r *postgresShopRepository) ShopProductRepositoryCreateTransferProduct(
 ) error {
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		errT := tx.Save(tp).Error
+		errT := tx.WithContext(ctx).Debug().Save(tp).Error
 		if errT != nil {
 			return errT
 		}
-		errT = tx.
-			Where("stock > ? and id = ? ", tp.StockToTransfer, sp.ID).
-			Save(sp).Error
-		if errT != nil {
+		if errT = tx.
+			Model(&model.ShopProduct{}).
+			Where(" id = ? ", sp.ID).
+			Update("stock", gorm.Expr("stock - ?", tp.StockToTransfer)).
+			Update("detail", sp.Detail).Error; errT != nil {
 			return errT
 		}
 
@@ -144,25 +145,29 @@ func (r *postgresShopRepository) ShopProductRepositoryCreateTransferProduct(
 	return err
 }
 
-func (r *postgresShopRepository) ShopProductRepositoryRevertTransferProduct(
+func (r *postgresShopRepository) ShopProductRepositoryUpdateTransferProduct(
 	ctx context.Context,
 	tp *model.TransferProduct,
 	sp *model.ShopProduct,
 	q Queue) error {
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		errT := tx.Save(tp).Error
+		errT := tx.WithContext(ctx).Debug().Save(tp).Error
 		if errT != nil {
 			return errT
 		}
-		errT = tx.
-			Where("stock = ? and id = ? ", sp.Stock-tp.StockToTransfer, sp.ID).
-			Save(sp).Error
-		if errT != nil {
+		if errT = tx.
+			Model(&model.ShopProduct{}).
+			Where(" id = ? ", sp.ID).
+			Update("stock", gorm.Expr("stock + ?", tp.StockToTransfer)).
+			Update("detail", sp.Detail).Error; errT != nil {
 			return errT
 		}
 
-		return q.Publish(ctx, tp)
+		if q != nil {
+			return q.Publish(ctx, tp)
+		}
+		return nil
 	})
 
 	return err

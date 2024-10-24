@@ -23,9 +23,28 @@ func (Warehouse) TableName() string {
 }
 
 type WarehouseDetail struct {
+	Volume    int       `json:"volume"`
 	Contact   Contact   `json:"contact"`
 	Addresses []Address `json:"addresses"`
 	ImageURL  string    `json:"image_url"`
+}
+
+type Rack struct {
+	Position int       `json:"position"`
+	Code     string    `json:"code"`
+	Jars     []RackJar `json:"jars"`
+}
+
+type RackJar struct {
+	Code      int              `json:"code"`
+	Position  string           `json:"position"`
+	Dimension RackJarDimension `json:"volume"`
+}
+
+type RackJarDimension struct {
+	Length int `json:"length"`
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 type WarehouseStoredProduct struct {
